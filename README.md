@@ -11,6 +11,80 @@ It returns realm names only, and no user data.
 
 Under development. There is no release yet.
 
+## Compatibility
+
+| Item | Version |
+|---|---|
+| Keycloak | 24.0.5, 25.0.6, 26.8 |
+| Database | The tests use PostgreSQL |
+
+The extension uses internal classes of Keycloak, which can change in any release.
+The integration tests run the jar in a real Keycloak of each version above to catch such changes.
+
+## Configure
+
+Set the options as environment variables, on the command line, or in `keycloak.conf`.
+
+| Option | Meaning |
+|---|---|
+| `host-realm` | The only realm where the endpoint answers. Required. |
+| `required-role` | A realm role of the host realm. The caller must have it. Required. |
+| `excluded-realms` | Realm names that are never returned, separated by commas. |
+
+```sh
+KC_SPI_REALM_RESTAPI_EXTENSION__REALM_DISCOVERY__HOST_REALM=login
+KC_SPI_REALM_RESTAPI_EXTENSION__REALM_DISCOVERY__REQUIRED_ROLE=realm-finder
+KC_SPI_REALM_RESTAPI_EXTENSION__REALM_DISCOVERY__EXCLUDED_REALMS=master,login
+```
+
+On the command line the options are `--spi-realm-restapi-extension--realm-discovery--host-realm` and so on.
+Keycloak 26.2 and earlier do not know the double separator. Use a single one there,
+such as `KC_SPI_REALM_RESTAPI_EXTENSION_REALM_DISCOVERY_HOST_REALM`.
+
+Without `host-realm` and `required-role` the endpoint rejects every request, and Keycloak logs a warning when it starts.
+
+Then set up the caller in the host realm.
+
+1. Create the realm role that `required-role` names.
+2. Create a confidential client with service accounts enabled.
+3. Give the role to the service account of the client.
+
+## API
+
+```
+POST /realms/{host-realm}/realm-discovery
+Authorization: Bearer <access token of the service account>
+Content-Type: application/json
+
+{"identifier": "alice@example.com"}
+```
+
+```json
+{"realms": ["realm-a", "realm-b"]}
+```
+
+- The identifier is a username or an email address. It must match in full. Case and outer spaces do not matter.
+- A realm is returned when it is enabled and has an enabled user with that username or email address.
+- The names are in alphabetical order, each one once. No match gives an empty list.
+- The identifier is in the body, so it does not show up in access logs.
+
+| Status | Reason |
+|---|---|
+| `200` | The search ran. |
+| `400` | The body has no text field `identifier`, or it is blank. |
+| `401` | No valid bearer token of the host realm. |
+| `403` | The token is not of a service account, or the service account does not have the role. |
+| `404` | The realm is not the host realm, or the options are not set. |
+
+## Security
+
+- The answer tells whether an identifier exists. Give the role only to backends that you trust,
+  and do not pass the answer on to an anonymous user without a rate limit.
+- The path of the endpoint is public, like every realm resource of Keycloak. The token and the role protect it.
+  You can also block the path at your proxy.
+- A user that exists only in a user federation, such as LDAP, and was never imported into Keycloak is not found.
+- Service accounts are never returned.
+
 ## Build
 
 ```sh

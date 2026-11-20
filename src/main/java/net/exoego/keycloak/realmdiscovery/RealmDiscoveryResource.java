@@ -1,8 +1,10 @@
 package net.exoego.keycloak.realmdiscovery;
 
-import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
@@ -13,6 +15,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -34,20 +37,28 @@ public class RealmDiscoveryResource {
     }
 
     /**
-     * Returns the names of the realms that have the user.
+     * Returns the names of the realms that have an enabled user with the username or the email address.
      *
+     * @param body a JSON object with the text field {@code identifier}
      * @return the response with the realm names
      */
     @POST
     @Path("")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response find() {
+    public Response find(JsonNode body) {
         RealmModel realm = session.getContext().getRealm();
         if (!settings.answersIn(realm.getName())) {
             throw new NotFoundException();
         }
         requireCaller(realm);
-        return Response.ok(Map.of("realms", List.of())).header(HttpHeaders.CACHE_CONTROL, "no-store").build();
+        JsonNode identifier = body == null ? null : body.get("identifier");
+        if (identifier == null || !identifier.isTextual() || identifier.asText().isBlank()) {
+            throw new BadRequestException("identifier is required");
+        }
+        var entityManager = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        var realms = new RealmFinder(entityManager, settings.excludedRealms()).find(identifier.asText());
+        return Response.ok(Map.of("realms", realms)).header(HttpHeaders.CACHE_CONTROL, "no-store").build();
     }
 
     private void requireCaller(RealmModel realm) {
