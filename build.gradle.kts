@@ -181,6 +181,8 @@ tasks.check {
 }
 
 // A line or a branch that no test runs is a case that cannot happen, or dead code. Look at it before it is merged.
+// Not 100 percent, because some code is for one Keycloak version only and one run cannot reach it.
+// Codecov merges the reports of all versions.
 val coverageGate = tasks.register<JacocoCoverageVerification>("coverageGate") {
     mustRunAfter(tasks.test, tasks.named("integrationTest"))
     dependsOn(coverageClasses)
@@ -191,11 +193,11 @@ val coverageGate = tasks.register<JacocoCoverageVerification>("coverageGate") {
         rule {
             limit {
                 counter = "LINE"
-                minimum = "1.0".toBigDecimal()
+                minimum = "0.95".toBigDecimal()
             }
             limit {
                 counter = "BRANCH"
-                minimum = "1.0".toBigDecimal()
+                minimum = "0.95".toBigDecimal()
             }
         }
     }

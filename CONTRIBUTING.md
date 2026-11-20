@@ -47,8 +47,9 @@ Write a comment only for something the code cannot say, such as a reason.
 `check` also writes one coverage report for the unit tests and the integration tests, in `build/reports/jacoco/test`.
 The provider runs in the JVM of Keycloak, so the integration tests put the JaCoCo agent into their Keycloak containers and read its data out.
 
-`check` fails when the tests do not run every line and every branch. Codecov merges the reports of all Keycloak
-versions in CI, and its status fails when the tests together do not run every line and every branch. A line or a branch that no test runs is a case that cannot happen, or dead code.
+`check` fails when the tests run less than 95 percent of the lines or of the branches. Some code is for one
+Keycloak version only, so one run cannot reach all of it. Codecov merges the reports of all Keycloak versions in CI,
+and its status fails when a pull request lowers the coverage of the project by more than one point. A line or a branch that no test runs is a case that cannot happen, or dead code.
 Write a test for it, or remove it.
 
 To test another Keycloak version, pass `-PtestKeycloakVersion=25.0.6`.

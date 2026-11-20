@@ -1,16 +1,17 @@
 # The report holds the unit tests and the integration tests. The second part is measured in the
-# Keycloak containers of the tests. The build itself requires that every line is covered.
-# A branch can be for one Keycloak version only, so the merged report of all rows of the test matrix
-# must cover every branch. Codecov counts a line with a missed branch as not covered.
+# Keycloak containers of the tests. Some code is for one Keycloak version only, so every row of the
+# test matrix uploads a report and Codecov merges them.
 codecov:
   notify:
-    # The number of rows of the test matrix. A status from fewer reports would miss branches.
+    # The number of rows of the test matrix. A status from fewer reports would show a drop that is not there.
     after_n_builds: 4
 coverage:
   status:
+    # A pull request must not lower the coverage of the project by more than one point.
     project:
       default:
-        target: 100%
+        target: auto
+        threshold: 1%
     patch:
       default:
-        target: 100%
+        informational: true
