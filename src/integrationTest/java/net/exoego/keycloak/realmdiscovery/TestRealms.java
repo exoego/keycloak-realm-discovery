@@ -2,10 +2,12 @@ package net.exoego.keycloak.realmdiscovery;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
@@ -27,6 +29,8 @@ final class TestRealms {
     static final String CALLER = "caller";
     /** A client of the host realm whose service account has no role. */
     static final String NO_ROLE = "no-role";
+    /** A client of the host realm with a pairwise subject in its tokens. Its service account has the required role. */
+    static final String PAIRWISE = "pairwise";
     /** A user of the host realm with a password and the required role. */
     static final String HUMAN = "human";
 
@@ -35,16 +39,11 @@ final class TestRealms {
         RolesRepresentation roles = new RolesRepresentation();
         roles.setRealm(List.of(new RoleRepresentation(REQUIRED_ROLE, null, false)));
         host.setRoles(roles);
-        host.setClients(List.of(client(CALLER), client(NO_ROLE)));
+        host.setClients(List.of(client(CALLER), client(NO_ROLE), pairwiseClient()));
 
-        UserRepresentation account = new UserRepresentation();
-        account.setUsername("service-account-" + CALLER);
-        account.setEnabled(true);
-        account.setServiceAccountClientId(CALLER);
-        account.setRealmRoles(List.of(REQUIRED_ROLE));
         UserRepresentation human = user(HUMAN, HUMAN + "@host.example");
         human.setRealmRoles(List.of(REQUIRED_ROLE));
-        host.setUsers(new ArrayList<>(List.of(account, human)));
+        host.setUsers(new ArrayList<>(List.of(account(CALLER), account(PAIRWISE), human)));
         create(host);
     }
 
@@ -86,6 +85,29 @@ final class TestRealms {
         try (Response response = KEYCLOAK.getKeycloakAdminClient().realm(realm).users().create(user)) {
             assertEquals(201, response.getStatus());
         }
+    }
+
+    private static UserRepresentation account(String clientId) {
+        UserRepresentation account = new UserRepresentation();
+        account.setUsername("service-account-" + clientId);
+        account.setEnabled(true);
+        account.setServiceAccountClientId(clientId);
+        account.setRealmRoles(List.of(REQUIRED_ROLE));
+        return account;
+    }
+
+    private static ClientRepresentation pairwiseClient() {
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+        mapper.setName("pairwise subject");
+        mapper.setProtocol("openid-connect");
+        mapper.setProtocolMapper("oidc-sha256-pairwise-sub-mapper");
+        mapper.setConfig(Map.of("pairwiseSubAlgorithmSalt", "test-salt"));
+
+        ClientRepresentation client = client(PAIRWISE);
+        // The mapper hashes the user id with the host of the redirect URI.
+        client.setRedirectUris(List.of("http://localhost/callback"));
+        client.setProtocolMappers(List.of(mapper));
+        return client;
     }
 
     private static ClientRepresentation client(String clientId) {
