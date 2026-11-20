@@ -17,13 +17,13 @@ class SettingsTest {
 
         assertEquals("host", settings.hostRealm());
         assertEquals("finder", settings.requiredRole());
-        assertEquals(Set.of("a", "b"), settings.excludedRealms());
+        assertEquals(Set.of("a", "b"), settings.excludedRealmIds());
     }
 
     @Test
     void excludesNoRealmByDefault() {
-        assertEquals(Set.of(), Settings.of("host", "finder", null, false).excludedRealms());
-        assertEquals(Set.of(), Settings.of("host", "finder", " ", false).excludedRealms());
+        assertEquals(Set.of(), Settings.of("host", "finder", null, false).excludedRealmIds());
+        assertEquals(Set.of(), Settings.of("host", "finder", " ", false).excludedRealmIds());
     }
 
     @Test

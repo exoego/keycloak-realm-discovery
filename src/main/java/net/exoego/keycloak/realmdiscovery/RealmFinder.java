@@ -41,16 +41,19 @@ final class RealmFinder {
         Set<String> realms = new TreeSet<>();
         for (String query : settings.includeRealmsWithoutEmailLogin()
                 ? WHERE_THE_USER_EXISTS : WHERE_THE_IDENTIFIER_LOGS_IN) {
-            realms.addAll(entityManager.createQuery(query, String.class)
+            for (Object[] realm : entityManager.createQuery(query, Object[].class)
                     .setParameter("identifier", value)
-                    .getResultList());
+                    .getResultList()) {
+                if (!settings.excludedRealmIds().contains((String) realm[0])) {
+                    realms.add((String) realm[1]);
+                }
+            }
         }
-        realms.removeAll(settings.excludedRealms());
         return List.copyOf(realms);
     }
 
     private static String query(String match) {
-        return "select distinct r.name from RealmEntity r, UserEntity u"
+        return "select distinct r.id, r.name from RealmEntity r, UserEntity u"
                 + " where u.realmId = r.id and " + match
                 + " and u.enabled = true and r.enabled = true and u.serviceAccountClientLink is null";
     }

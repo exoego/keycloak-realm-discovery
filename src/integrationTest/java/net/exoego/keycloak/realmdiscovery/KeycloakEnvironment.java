@@ -19,7 +19,7 @@ final class KeycloakEnvironment {
 
     static final String HOST_REALM = "host";
     static final String REQUIRED_ROLE = "realm-finder";
-    static final String EXCLUDED_REALM = "excluded";
+    static final String EXCLUDED_REALM_ID = "excluded-realm-id";
 
     private static final String VERSION = System.getProperty("keycloak.version");
     private static final int MAJOR = Integer.parseInt(VERSION.split("\\.", -1)[0]);
@@ -42,7 +42,7 @@ final class KeycloakEnvironment {
             .withEnv("KC_DB_PASSWORD", "keycloak")
             .withEnv(option("HOST_REALM"), HOST_REALM)
             .withEnv(option("REQUIRED_ROLE"), REQUIRED_ROLE)
-            .withEnv(option("EXCLUDED_REALMS"), EXCLUDED_REALM + ", no-such-realm");
+            .withEnv(option("EXCLUDED_REALM_IDS"), EXCLUDED_REALM_ID + ", no-such-realm");
 
     static {
         POSTGRES.start();
