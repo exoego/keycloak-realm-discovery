@@ -14,8 +14,7 @@ final class RealmFinder {
 
     // Two statements, because each one can use its own index. USER_ENTITY has an index on EMAIL,
     // and a unique constraint on (REALM_ID, USERNAME) that the join probes once for each realm.
-    private static final String BY_EMAIL = query("email");
-    private static final String BY_USERNAME = query("username");
+    private static final List<String> QUERIES = List.of(query("email"), query("username"));
 
     private final EntityManager entityManager;
     private final Set<String> excludedRealms;
@@ -30,7 +29,7 @@ final class RealmFinder {
         // Keycloak stores usernames and email addresses in lower case.
         String value = identifier.toLowerCase(Locale.ROOT);
         Set<String> realms = new TreeSet<>();
-        for (String query : List.of(BY_EMAIL, BY_USERNAME)) {
+        for (String query : QUERIES) {
             realms.addAll(entityManager.createQuery(query, String.class)
                     .setParameter("identifier", value)
                     .getResultList());
