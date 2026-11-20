@@ -58,73 +58,18 @@ jobs:
           KEYCLOAK_VERSION: ${{ matrix.keycloak }}
         run: ./gradlew check -PtestJavaVersion=${{ matrix.java }} -PtestKeycloakVersion="$KEYCLOAK_VERSION"
 
-      # One row is enough. Every row measures the same tests.
+      # Every row uploads, because some code runs in one Keycloak version only. Codecov merges the reports.
+      # codecov.yml holds the number of rows, so change it with the matrix.
       # The token keeps others from uploading fake numbers for main. A pull request from a fork gets
       # no secret. The action then uploads with no token, which Codecov allows for a fork of a public
       # repository. A failed upload must not fail the tests.
       - name: Upload coverage to Codecov
-        if: matrix.java == 21 && matrix.keycloak == ''
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: build/reports/jacoco/test/jacocoTestReport.xml
           disable_search: true
           fail_ci_if_error: false
-
-      - name: Upload the coverage data
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: coverage-java-${{ matrix.java }}-keycloak-${{ matrix.keycloak || 'catalog' }}
-          path: build/jacoco/
-          if-no-files-found: error
-          retention-days: 1
-
-      # The classes as Keycloak loaded them. The report needs them, and one Keycloak version is enough.
-      - name: Upload the loaded classes
-        if: matrix.java == 21 && matrix.keycloak == ''
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: loaded-classes
-          path: build/jacoco-classes/keycloak/
-          if-no-files-found: error
-          retention-days: 1
-
-  # Some code is for one Keycloak version only. So every branch must be tested by the rows together.
-  coverage:
-    name: Coverage of all versions
-    timeout-minutes: 10
-    needs: [test]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up JDK
-        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
-        with:
-          java-version: 21
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-
-      - name: Download the coverage data
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          pattern: coverage-*
-          path: build/jacoco/
-
-      - name: Download the loaded classes
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: loaded-classes
-          path: build/jacoco-classes/keycloak/
-
-      - name: Check the coverage
-        run: ./gradlew coverageGateOfAllVersions
 
   # The one check of this workflow that branch protection requires. Its name does not change
   # when the matrix above changes. A new job of this workflow must be added to "needs".
@@ -133,7 +78,7 @@ jobs:
     timeout-minutes: 5
     # A skipped required job counts as passed, so run always and fail by hand.
     if: always()
-    needs: [test, coverage]
+    needs: [test]
     runs-on: ubuntu-latest
     permissions: {}
     steps:
