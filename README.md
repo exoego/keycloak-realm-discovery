@@ -6,14 +6,14 @@ A Keycloak extension that finds the realms of a user from a username or an email
 
 Keycloak searches users in one realm at a time. A login page that serves many realms must know the realm
 before it can send the user to Keycloak. This extension adds one REST endpoint that takes an identifier
-and returns the names of the realms that have an enabled user with that username or verified email address.
-It returns realm names only, and no user data.
+and returns the realms that have an enabled user with that username or verified email address.
+It returns the name and the display name of each realm, and no user data.
 
 ## Compatibility
 
 | keycloak-realm-discovery | Keycloak |
 |---|---|
-| 0.1.x | 24.0.5, 25.0.6, 26.8 |
+| 0.2.x | 24.0.5, 25.0.6, 26.8 |
 
 The lookup reads the tables of Keycloak with JPA, so it needs no certain database. The tests use PostgreSQL.
 
@@ -80,7 +80,7 @@ Content-Type: application/json
 ```
 
 ```json
-{"realms": ["realm-a", "realm-b"]}
+{"realms": [{"name": "realm-a", "displayName": "Realm A"}, {"name": "realm-b"}]}
 ```
 
 - The identifier is a username or an email address. It must match in full. Case and outer spaces do not matter.
@@ -94,7 +94,10 @@ Content-Type: application/json
   of the same user. A username that is not the email address of the user needs no verified email address.
 - An email address finds only a realm where "Login with email" is on. A realm that allows duplicate email
   addresses has it off. Set `include-realms-without-email-login` to find such realms too.
-- The names are sorted by character code, each one once. So `Zeta` comes before `alpha`. No match gives an empty list.
+- The realms are sorted by the character codes of their names, each one once. So `Zeta` comes before `alpha`.
+  No match gives an empty list.
+- `name` is the name in the URLs of the realm. `displayName` is the text for people, as set in the realm settings.
+  A realm without a display name has no `displayName` field.
 - The identifier is in the body, so it does not show up in access logs.
 
 | Status | Reason |

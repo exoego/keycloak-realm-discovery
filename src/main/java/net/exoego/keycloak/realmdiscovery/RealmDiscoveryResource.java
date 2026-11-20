@@ -32,10 +32,10 @@ public class RealmDiscoveryResource {
     }
 
     /**
-     * Returns the names of the realms that have an enabled user with the username or the email address.
+     * Returns the names and the display names of the realms that have an enabled user with the username or the email address.
      *
      * @param body a JSON object with the text field {@code identifier}
-     * @return the response with the realm names
+     * @return the response with the realms
      */
     @POST
     @Path("")

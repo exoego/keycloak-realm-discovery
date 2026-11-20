@@ -1,11 +1,14 @@
 package net.exoego.keycloak.realmdiscovery;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.TreeMap;
 
 import jakarta.persistence.EntityManager;
 
+import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
@@ -33,28 +36,40 @@ final class RealmFinder {
         this.settings = settings;
     }
 
-    /** Returns the realm names in the order of {@link String#compareTo(String)}. */
-    List<String> find(String identifier) {
+    /** Returns the realms in the order of {@link String#compareTo(String)} of their names. */
+    List<FoundRealm> find(String identifier) {
         // Keycloak stores usernames and email addresses in lower case.
         // Its own method is used, because the result depends on the default locale of the JVM.
         String value = KeycloakModelUtils.toLowerCaseSafe(identifier);
-        Set<String> realms = new TreeSet<>();
+        Map<String, FoundRealm> realms = new TreeMap<>();
         for (String query : settings.includeRealmsWithoutEmailLogin()
                 ? WHERE_THE_USER_EXISTS : WHERE_THE_IDENTIFIER_LOGS_IN) {
             for (Object[] realm : entityManager.createQuery(query, Object[].class)
                     .setParameter("identifier", value)
                     .getResultList()) {
                 if (!settings.excludedRealmIds().contains((String) realm[0])) {
-                    realms.add((String) realm[1]);
+                    String name = (String) realm[1];
+                    realms.put(name, new FoundRealm(name, (String) realm[2]));
                 }
             }
         }
-        return List.copyOf(realms);
+        return new ArrayList<>(realms.values());
     }
 
     private static String query(String match) {
-        return "select distinct r.id, r.name from RealmEntity r, UserEntity u"
+        // No "distinct", because some databases cannot compare the large text of an attribute.
+        return "select r.id, r.name, " + displayName() + " from RealmEntity r, UserEntity u"
                 + " where u.realmId = r.id and " + match
                 + " and u.enabled = true and r.enabled = true and u.serviceAccountClientLink is null";
+    }
+
+    // Newer Keycloak versions keep the display name in a column of the realm, and older ones in a realm attribute.
+    private static String displayName() {
+        for (Field field : RealmEntity.class.getDeclaredFields()) {
+            if (field.getName().equals("displayName")) {
+                return "r.displayName";
+            }
+        }
+        return "(select a.value from RealmAttributeEntity a where a.realm = r and a.name = 'displayName')";
     }
 }
