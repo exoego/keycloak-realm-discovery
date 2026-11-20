@@ -180,7 +180,7 @@ tasks.check {
     dependsOn(tasks.jacocoTestReport)
 }
 
-// A line that no test runs is a case that cannot happen, or dead code. Look at it before it is merged.
+// A line or a branch that no test runs is a case that cannot happen, or dead code. Look at it before it is merged.
 val coverageGate = tasks.register<JacocoCoverageVerification>("coverageGate") {
     mustRunAfter(tasks.test, tasks.named("integrationTest"))
     dependsOn(coverageClasses)
@@ -191,6 +191,10 @@ val coverageGate = tasks.register<JacocoCoverageVerification>("coverageGate") {
         rule {
             limit {
                 counter = "LINE"
+                minimum = "1.0".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
                 minimum = "1.0".toBigDecimal()
             }
         }
