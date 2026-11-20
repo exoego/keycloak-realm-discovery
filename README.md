@@ -21,6 +21,23 @@ Under development. There is no release yet.
 The extension uses internal classes of Keycloak, which can change in any release.
 The integration tests run the jar in a real Keycloak of each version above to catch such changes.
 
+## Install
+
+Download the jar from [Maven Central](https://repo1.maven.org/maven2/net/exoego/keycloak-realm-discovery/),
+put it in `/opt/keycloak/providers/` and run `kc.sh build`.
+The jar has no dependencies of its own. For example, in a container image, with the version in `VERSION`:
+
+```dockerfile
+FROM quay.io/keycloak/keycloak:26.8 AS builder
+ARG VERSION
+ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/net/exoego/keycloak-realm-discovery/${VERSION}/keycloak-realm-discovery-${VERSION}.jar /opt/keycloak/providers/
+RUN /opt/keycloak/bin/kc.sh build
+
+FROM quay.io/keycloak/keycloak:26.8
+COPY --from=builder /opt/keycloak/ /opt/keycloak/
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
+```
+
 ## Configure
 
 Set the options as environment variables, on the command line, or in `keycloak.conf`.
