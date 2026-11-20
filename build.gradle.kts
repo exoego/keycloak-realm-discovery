@@ -181,28 +181,37 @@ tasks.check {
 }
 
 // A line or a branch that no test runs is a case that cannot happen, or dead code. Look at it before it is merged.
-val coverageGate = tasks.register<JacocoCoverageVerification>("coverageGate") {
-    mustRunAfter(tasks.test, tasks.named("integrationTest"))
+fun JacocoCoverageVerification.gate(data: FileTree, vararg counters: String) {
     dependsOn(coverageClasses)
-    executionData.setFrom(coverageData)
+    executionData.setFrom(data)
     classDirectories.setFrom(layout.buildDirectory.dir("jacoco-classes/report"))
     sourceDirectories.setFrom(sourceSets.main.get().allJava.srcDirs)
     violationRules {
         rule {
-            limit {
-                counter = "LINE"
-                minimum = "1.0".toBigDecimal()
-            }
-            limit {
-                counter = "BRANCH"
-                minimum = "1.0".toBigDecimal()
+            for (name in counters) {
+                limit {
+                    counter = name
+                    minimum = "1.0".toBigDecimal()
+                }
             }
         }
     }
 }
 
+val coverageGate = tasks.register<JacocoCoverageVerification>("coverageGate") {
+    mustRunAfter(tasks.test, tasks.named("integrationTest"))
+    gate(coverageData, "LINE")
+}
+
 tasks.check {
     dependsOn(coverageGate)
+}
+
+// Some code is for one Keycloak version only, so one run cannot take every branch.
+// CI puts the data of every row of its matrix under build/jacoco and then runs this task.
+tasks.register<JacocoCoverageVerification>("coverageGateOfAllVersions") {
+    mustRunAfter(tasks.test, tasks.named("integrationTest"))
+    gate(coverageData, "LINE", "BRANCH")
 }
 
 nexusPublishing {
