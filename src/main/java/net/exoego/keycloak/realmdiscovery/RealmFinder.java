@@ -28,7 +28,7 @@ final class RealmFinder {
     /** Returns the realm names in alphabetical order. */
     List<String> find(String identifier) {
         // Keycloak stores usernames and email addresses in lower case.
-        String value = identifier.trim().toLowerCase(Locale.ROOT);
+        String value = identifier.toLowerCase(Locale.ROOT);
         Set<String> realms = new TreeSet<>();
         for (String query : List.of(BY_EMAIL, BY_USERNAME)) {
             realms.addAll(entityManager.createQuery(query, String.class)

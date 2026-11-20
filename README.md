@@ -80,6 +80,7 @@ Content-Type: application/json
 ```
 
 - The identifier is a username or an email address. It must match in full. Case and outer spaces do not matter.
+- Keycloak stores at most 255 characters for a username or an email address, so a longer identifier is rejected.
 - A realm is returned when it is enabled and has an enabled user with that username or email address.
 - The names are in alphabetical order, each one once. No match gives an empty list.
 - The identifier is in the body, so it does not show up in access logs.
@@ -87,7 +88,7 @@ Content-Type: application/json
 | Status | Reason |
 |---|---|
 | `200` | The search ran. |
-| `400` | The body has no text field `identifier`, or it is blank. |
+| `400` | The body has no text field `identifier`, or it is blank, or it is longer than 255 characters. |
 | `401` | No valid bearer token of the host realm. |
 | `403` | The token is not of a service account, or the service account does not have the role. |
 | `404` | The realm is not the host realm, or the options are not set. |
