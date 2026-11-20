@@ -45,18 +45,21 @@ Set the options as environment variables, on the command line, or in `keycloak.c
 |---|---|
 | `host-realm` | The only realm where the endpoint answers. Required. |
 | `required-role` | A realm role of the host realm. The caller must have it. Required. |
-| `excluded-realms` | Realm names that are never returned, separated by commas. |
+| `excluded-realm-ids` | Ids of realms that are never returned, separated by commas. |
 | `include-realms-without-email-login` | `true` lets an email address also find a realm where "Login with email" is off. The default is `false`. |
 
 ```sh
 KC_SPI_REALM_RESTAPI_EXTENSION__REALM_DISCOVERY__HOST_REALM=login
 KC_SPI_REALM_RESTAPI_EXTENSION__REALM_DISCOVERY__REQUIRED_ROLE=realm-finder
-KC_SPI_REALM_RESTAPI_EXTENSION__REALM_DISCOVERY__EXCLUDED_REALMS=master,login
+KC_SPI_REALM_RESTAPI_EXTENSION__REALM_DISCOVERY__EXCLUDED_REALM_IDS=5f0c3a52-8b1e-4d2a-9c47-2e6d1b0a7f31,9a1d7c3e-4b62-4f0a-8e15-6c2b9d0f3a74
 ```
 
 On the command line the options are `--spi-realm-restapi-extension--realm-discovery--host-realm` and so on.
 Keycloak 26.2 and earlier do not know the double separator. Use a single one there,
 such as `KC_SPI_REALM_RESTAPI_EXTENSION_REALM_DISCOVERY_HOST_REALM`.
+
+A realm is excluded by its id, because the id stays when the realm is renamed.
+`GET /admin/realms/{name}` returns it in the field `id`.
 
 Without `host-realm` and `required-role` the endpoint rejects every request, and Keycloak logs a warning when it starts.
 

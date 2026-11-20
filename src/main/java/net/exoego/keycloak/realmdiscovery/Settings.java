@@ -9,17 +9,17 @@ import java.util.stream.Collectors;
  *
  * @param hostRealm the only realm where the endpoint answers, or null
  * @param requiredRole the realm role of the host realm that a caller must have, or null
- * @param excludedRealms the realms that are never returned
+ * @param excludedRealmIds the ids of the realms that are never returned
  * @param includeRealmsWithoutEmailLogin whether an email address also finds a realm where it cannot log in
  */
-record Settings(String hostRealm, String requiredRole, Set<String> excludedRealms,
+record Settings(String hostRealm, String requiredRole, Set<String> excludedRealmIds,
         boolean includeRealmsWithoutEmailLogin) {
 
-    static Settings of(String hostRealm, String requiredRole, String excludedRealms,
+    static Settings of(String hostRealm, String requiredRole, String excludedRealmIds,
             boolean includeRealmsWithoutEmailLogin) {
-        Set<String> excluded = Arrays.stream((excludedRealms == null ? "" : excludedRealms).split(","))
+        Set<String> excluded = Arrays.stream((excludedRealmIds == null ? "" : excludedRealmIds).split(","))
                 .map(String::trim)
-                .filter(name -> !name.isEmpty())
+                .filter(id -> !id.isEmpty())
                 .collect(Collectors.toUnmodifiableSet());
         return new Settings(blankToNull(hostRealm), blankToNull(requiredRole), excluded,
                 includeRealmsWithoutEmailLogin);

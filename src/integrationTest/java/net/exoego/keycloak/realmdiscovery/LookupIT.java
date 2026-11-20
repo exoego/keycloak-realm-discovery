@@ -12,7 +12,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import static net.exoego.keycloak.realmdiscovery.KeycloakEnvironment.EXCLUDED_REALM;
+import static net.exoego.keycloak.realmdiscovery.KeycloakEnvironment.EXCLUDED_REALM_ID;
 import static net.exoego.keycloak.realmdiscovery.KeycloakEnvironment.HOST_REALM;
 import static net.exoego.keycloak.realmdiscovery.KeycloakEnvironment.KEYCLOAK;
 import static net.exoego.keycloak.realmdiscovery.TestRealms.CALLER;
@@ -28,6 +28,9 @@ class LookupIT {
     private static final String TWINS = "lookup-twins";
     private static final String SLEEPING = "lookup-sleeping";
     private static final String NAMES_ONLY = "lookup-names-only";
+    private static final String EXCLUDED = "lookup-excluded";
+    // The option of the test environment lists this text as an id. A realm with that name is still returned.
+    private static final String NO_SUCH_REALM = "no-such-realm";
 
     private static Discovery discovery;
     private static String token;
@@ -69,7 +72,11 @@ class LookupIT {
         sleeping.setEnabled(false);
         create(sleeping, user("carol", "shared@lookup.example"));
 
-        create(TestRealms.realm(EXCLUDED_REALM), user("carol", "shared@lookup.example"));
+        RealmRepresentation excluded = TestRealms.realm(EXCLUDED);
+        excluded.setId(EXCLUDED_REALM_ID);
+        create(excluded, user("carol", "shared@lookup.example"), user("leo", "leo@lookup.example"));
+
+        create(TestRealms.realm(NO_SUCH_REALM), user("mia", "mia@lookup.example"));
 
         discovery = new Discovery(KEYCLOAK.getAuthServerUrl());
         token = discovery.serviceAccountToken(HOST_REALM, CALLER, SECRET);
@@ -141,6 +148,24 @@ class LookupIT {
     void ignoresCaseAndOuterSpaces() throws Exception {
         assertEquals(List.of(ALPHA, NAMES_ONLY), realms("  Alice@Lookup.Example "));
         assertEquals(List.of(ALPHA), realms("ALICE"));
+    }
+
+    @Test
+    void skipsAnExcludedRealmAlsoAfterItIsRenamed() throws Exception {
+        assertEquals(List.of(), realms("leo"));
+        assertEquals(List.of(), realms("leo@lookup.example"));
+
+        RealmRepresentation renamed = new RealmRepresentation();
+        renamed.setRealm(EXCLUDED + "-renamed");
+        KEYCLOAK.getKeycloakAdminClient().realm(EXCLUDED).update(renamed);
+
+        assertEquals(List.of(), realms("leo"));
+        assertEquals(List.of(), realms("leo@lookup.example"));
+    }
+
+    @Test
+    void doesNotExcludeARealmByItsName() throws Exception {
+        assertEquals(List.of(NO_SUCH_REALM), realms("mia"));
     }
 
     @Test
