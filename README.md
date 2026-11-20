@@ -1,4 +1,5 @@
 # keycloak-realm-discovery
+[![Maven Central](https://img.shields.io/maven-central/v/net.exoego/keycloak-realm-discovery)](https://central.sonatype.com/artifact/net.exoego/keycloak-realm-discovery)
 [![codecov](https://codecov.io/gh/exoego/keycloak-realm-discovery/graph/badge.svg?token=nfS9Kalc4l)](https://codecov.io/gh/exoego/keycloak-realm-discovery)
 
 A Keycloak extension that finds the realms of a user from a username or an email address.
@@ -8,16 +9,13 @@ before it can send the user to Keycloak. This extension adds one REST endpoint t
 and returns the names of the realms that have an enabled user with that username or email address.
 It returns realm names only, and no user data.
 
-## Status
-
-Under development. There is no release yet.
-
 ## Compatibility
 
-| Item | Version |
+| keycloak-realm-discovery | Keycloak |
 |---|---|
-| Keycloak | 24.0.5, 25.0.6, 26.8 |
-| Database | The tests use PostgreSQL |
+| 0.1.x | 24.0.5, 25.0.6, 26.8 |
+
+The lookup reads the tables of Keycloak with JPA, so it needs no certain database. The tests use PostgreSQL.
 
 The extension uses internal classes of Keycloak, which can change in any release.
 The integration tests run the jar in a real Keycloak of each version above to catch such changes.
