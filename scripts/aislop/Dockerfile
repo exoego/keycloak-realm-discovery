@@ -1,0 +1,12 @@
+# The image that scripts/aislop.sh runs. It holds aislop and nothing else.
+# The build has the network and no project file. The scan runs from this image with no network.
+
+FROM node:26-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc
+# renovate: datasource=npm depName=aislop
+ARG AISLOP_VERSION=0.20.1
+RUN npm install --prefix /opt/aislop --ignore-scripts --no-audit --no-fund --loglevel=error \
+        "aislop@${AISLOP_VERSION}" \
+    && npm cache clean --force
+ENV PATH=/opt/aislop/node_modules/.bin:$PATH
+USER node
+ENTRYPOINT ["aislop"]
