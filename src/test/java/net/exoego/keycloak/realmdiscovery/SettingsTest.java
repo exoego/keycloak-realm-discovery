@@ -13,7 +13,7 @@ class SettingsTest {
 
     @Test
     void trimsTheOptions() {
-        Settings settings = Settings.of(" host ", " finder ", " a, b ,,a ");
+        Settings settings = Settings.of(" host ", " finder ", " a, b ,,a ", false);
 
         assertEquals("host", settings.hostRealm());
         assertEquals("finder", settings.requiredRole());
@@ -22,13 +22,19 @@ class SettingsTest {
 
     @Test
     void excludesNoRealmByDefault() {
-        assertEquals(Set.of(), Settings.of("host", "finder", null).excludedRealms());
-        assertEquals(Set.of(), Settings.of("host", "finder", " ").excludedRealms());
+        assertEquals(Set.of(), Settings.of("host", "finder", null, false).excludedRealms());
+        assertEquals(Set.of(), Settings.of("host", "finder", " ", false).excludedRealms());
+    }
+
+    @Test
+    void keepsTheEmailLoginOption() {
+        assertFalse(Settings.of("host", "finder", null, false).includeRealmsWithoutEmailLogin());
+        assertTrue(Settings.of("host", "finder", null, true).includeRealmsWithoutEmailLogin());
     }
 
     @Test
     void answersOnlyInTheHostRealm() {
-        Settings settings = Settings.of("host", "finder", null);
+        Settings settings = Settings.of("host", "finder", null, false);
 
         assertTrue(settings.answersIn("host"));
         assertFalse(settings.answersIn("other"));
@@ -37,15 +43,15 @@ class SettingsTest {
     @Test
     void answersNowhereWithoutBothOptions() {
         for (Settings settings : new Settings[] {
-                Settings.of(null, "finder", null),
-                Settings.of(" ", "finder", null),
-                Settings.of("host", null, null),
-                Settings.of("host", "", null),
-                Settings.of(null, null, null)}) {
+                Settings.of(null, "finder", null, false),
+                Settings.of(" ", "finder", null, false),
+                Settings.of("host", null, null, false),
+                Settings.of("host", "", null, false),
+                Settings.of(null, null, null, false)}) {
             assertFalse(settings.complete());
             assertFalse(settings.answersIn("host"));
             assertFalse(settings.answersIn(null));
         }
-        assertNull(Settings.of(" ", null, null).hostRealm());
+        assertNull(Settings.of(" ", null, null, false).hostRealm());
     }
 }

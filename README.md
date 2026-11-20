@@ -6,7 +6,7 @@ A Keycloak extension that finds the realms of a user from a username or an email
 
 Keycloak searches users in one realm at a time. A login page that serves many realms must know the realm
 before it can send the user to Keycloak. This extension adds one REST endpoint that takes an identifier
-and returns the names of the realms that have an enabled user with that username or email address.
+and returns the names of the realms that have an enabled user with that username or verified email address.
 It returns realm names only, and no user data.
 
 ## Compatibility
@@ -46,6 +46,7 @@ Set the options as environment variables, on the command line, or in `keycloak.c
 | `host-realm` | The only realm where the endpoint answers. Required. |
 | `required-role` | A realm role of the host realm. The caller must have it. Required. |
 | `excluded-realms` | Realm names that are never returned, separated by commas. |
+| `include-realms-without-email-login` | `true` lets an email address also find a realm where "Login with email" is off. The default is `false`. |
 
 ```sh
 KC_SPI_REALM_RESTAPI_EXTENSION__REALM_DISCOVERY__HOST_REALM=login
@@ -86,6 +87,10 @@ Content-Type: application/json
 - An identifier with a NUL character inside, or with half of a surrogate pair, is rejected.
   PostgreSQL cannot store such a text.
 - A realm is returned when it is enabled and has an enabled user with that username or email address.
+- An email address counts only when it is verified. This also holds for a username that is the email address
+  of the same user. A username that is not the email address of the user needs no verified email address.
+- An email address finds only a realm where "Login with email" is on. A realm that allows duplicate email
+  addresses has it off. Set `include-realms-without-email-login` to find such realms too.
 - The names are sorted by character code, each one once. So `Zeta` comes before `alpha`. No match gives an empty list.
 - The identifier is in the body, so it does not show up in access logs.
 
@@ -112,6 +117,8 @@ With 500 realms and 500,000 users a call takes less than 10 ms. See [docs/perfor
 - An imported user is found by its copy in the database of Keycloak. The lookup does not ask the user federation
   or an organization. So it can return a realm where Keycloak refuses the login, such as after the user was
   removed from LDAP, or for a managed member of a disabled organization.
+- A user can choose a username that is the email address of another person, where the realm allows it.
+  The lookup then returns that realm for the address. So an answer does not prove that the person has an account there.
 - Service accounts are never returned.
 
 ## Build

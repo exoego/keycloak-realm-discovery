@@ -56,7 +56,7 @@ public class RealmDiscoveryResource {
             throw new BadRequestException("identifier has an invalid character");
         }
         var entityManager = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        var realms = new RealmFinder(entityManager, settings.excludedRealms()).find(identifier);
+        var realms = new RealmFinder(entityManager, settings).find(identifier);
         return Response.ok(Map.of("realms", realms)).header(HttpHeaders.CACHE_CONTROL, "no-store").build();
     }
 }

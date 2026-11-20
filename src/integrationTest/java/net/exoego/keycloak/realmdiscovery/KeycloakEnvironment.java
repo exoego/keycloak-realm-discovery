@@ -71,7 +71,7 @@ final class KeycloakEnvironment {
     }
 
     // Keycloak 26.3 added the "__" separator. Older versions read only the single "_" form.
-    private static String option(String name) {
+    static String option(String name) {
         boolean doubleSeparator = MAJOR > 26 || (MAJOR == 26 && MINOR >= 3);
         return (doubleSeparator
                 ? "KC_SPI_REALM_RESTAPI_EXTENSION__REALM_DISCOVERY__"
