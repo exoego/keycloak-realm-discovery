@@ -14,9 +14,6 @@ It returns the name and the display name of each realm, and no user data.
 | keycloak-realm-discovery | Keycloak |
 |---|---|
 | 0.2.x | 24.0.5, 25.0.6, 26.8 |
-| 0.1.x | 24.0.5, 25.0.6, 26.8 |
-
-Version 0.1 returns the realms as plain names, such as `{"realms": ["realm-a"]}`.
 
 The lookup reads the tables of Keycloak with JPA, so it needs no certain database. The tests use PostgreSQL.
 
