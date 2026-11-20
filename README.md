@@ -1,4 +1,5 @@
 # keycloak-realm-discovery
+[![codecov](https://codecov.io/gh/exoego/keycloak-realm-discovery/graph/badge.svg?token=nfS9Kalc4l)](https://codecov.io/gh/exoego/keycloak-realm-discovery)
 
 A Keycloak extension that finds the realms of a user from a username or an email address.
 
