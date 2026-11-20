@@ -7,6 +7,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,12 @@ final class Discovery {
                 "client_secret", secret,
                 "username", username,
                 "password", password));
+    }
+
+    /** Reads a claim from the payload of a token. */
+    static String claim(String token, String name) throws Exception {
+        byte[] payload = Base64.getUrlDecoder().decode(token.split("\\.", -1)[1]);
+        return JSON.readTree(payload).get(name).asText();
     }
 
     private String token(String realm, Map<String, String> form) throws Exception {

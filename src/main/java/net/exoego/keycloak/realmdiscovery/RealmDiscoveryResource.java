@@ -20,7 +20,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 
 /**
@@ -77,10 +76,10 @@ public class RealmDiscoveryResource {
         if (authenticated == null) {
             throw new NotAuthorizedException("Bearer");
         }
-        // The type of the result above changed in Keycloak 26.6, so the user is read from the token.
-        // The token is valid here, because the authenticator accepted it.
-        AccessToken token = session.tokens().decode(bearer, AccessToken.class);
-        UserModel user = session.users().getUserById(realm, token.getSubject());
+        // The "sub" claim is not always the user id, so the user comes from the authenticator.
+        // Keycloak 26.5 deprecated getUser() for user(), which Keycloak 24 and 25 do not have.
+        @SuppressWarnings("removal")
+        UserModel user = authenticated.getUser();
         RoleModel role = realm.getRole(settings.requiredRole());
         if (user.getServiceAccountClientLink() == null || role == null || !user.hasRole(role)) {
             throw new ForbiddenException();

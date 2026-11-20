@@ -10,9 +10,11 @@ import static net.exoego.keycloak.realmdiscovery.KeycloakEnvironment.KEYCLOAK;
 import static net.exoego.keycloak.realmdiscovery.TestRealms.CALLER;
 import static net.exoego.keycloak.realmdiscovery.TestRealms.HUMAN;
 import static net.exoego.keycloak.realmdiscovery.TestRealms.NO_ROLE;
+import static net.exoego.keycloak.realmdiscovery.TestRealms.PAIRWISE;
 import static net.exoego.keycloak.realmdiscovery.TestRealms.PASSWORD;
 import static net.exoego.keycloak.realmdiscovery.TestRealms.SECRET;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class AuthorizationIT {
 
@@ -59,6 +61,24 @@ class AuthorizationIT {
     @Test
     void userWithTheRoleIsRejected() throws Exception {
         String token = discovery.passwordToken(HOST_REALM, CALLER, SECRET, HUMAN, PASSWORD);
+
+        assertEquals(403, discovery.post(HOST_REALM, token, BODY).statusCode());
+    }
+
+    @Test
+    void serviceAccountWithPairwiseSubjectIsAccepted() throws Exception {
+        String token = discovery.serviceAccountToken(HOST_REALM, PAIRWISE, SECRET);
+        String account = KEYCLOAK.getKeycloakAdminClient().realm(HOST_REALM).users()
+                .searchByUsername("service-account-" + PAIRWISE, true).get(0).getId();
+
+        // The subject must differ from the user id, or the test shows nothing.
+        assertNotEquals(account, Discovery.claim(token, "sub"));
+        assertEquals(200, discovery.post(HOST_REALM, token, BODY).statusCode());
+    }
+
+    @Test
+    void userOfClientWithPairwiseSubjectIsRejected() throws Exception {
+        String token = discovery.passwordToken(HOST_REALM, PAIRWISE, SECRET, HUMAN, PASSWORD);
 
         assertEquals(403, discovery.post(HOST_REALM, token, BODY).statusCode());
     }
