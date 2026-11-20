@@ -168,6 +168,8 @@ class LookupIT {
     @Test
     void checksTheCallerBeforeTheBody() throws Exception {
         assertEquals(401, discovery.post(HOST_REALM, null, "{}").statusCode());
+        assertEquals(401, discovery.post(HOST_REALM, null, "{").statusCode());
+        assertEquals(404, discovery.post("master", null, "{").statusCode());
     }
 
     private static List<String> realms(String identifier) throws Exception {
