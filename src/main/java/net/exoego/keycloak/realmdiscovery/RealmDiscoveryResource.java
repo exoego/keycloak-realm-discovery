@@ -62,6 +62,11 @@ public class RealmDiscoveryResource {
         if (identifier.codePointCount(0, identifier.length()) > MAX_LENGTH) {
             throw new BadRequestException("identifier is too long");
         }
+        // PostgreSQL fails a statement that has a NUL character.
+        // Its driver sends half of a surrogate pair as "?", which can match another user.
+        if (identifier.codePoints().anyMatch(c -> c == 0 || Character.getType(c) == Character.SURROGATE)) {
+            throw new BadRequestException("identifier has an invalid character");
+        }
         var entityManager = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         var realms = new RealmFinder(entityManager, settings.excludedRealms()).find(identifier);
         return Response.ok(Map.of("realms", realms)).header(HttpHeaders.CACHE_CONTROL, "no-store").build();

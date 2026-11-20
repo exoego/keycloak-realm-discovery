@@ -1,11 +1,12 @@
 package net.exoego.keycloak.realmdiscovery;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
 import jakarta.persistence.EntityManager;
+
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * Finds the realms that have an enabled user with a username or an email address.
@@ -24,10 +25,11 @@ final class RealmFinder {
         this.excludedRealms = excludedRealms;
     }
 
-    /** Returns the realm names in alphabetical order. */
+    /** Returns the realm names in the order of {@link String#compareTo(String)}. */
     List<String> find(String identifier) {
         // Keycloak stores usernames and email addresses in lower case.
-        String value = identifier.toLowerCase(Locale.ROOT);
+        // Its own method is used, because the result depends on the default locale of the JVM.
+        String value = KeycloakModelUtils.toLowerCaseSafe(identifier);
         Set<String> realms = new TreeSet<>();
         for (String query : QUERIES) {
             realms.addAll(entityManager.createQuery(query, String.class)

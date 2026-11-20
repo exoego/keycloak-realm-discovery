@@ -80,15 +80,19 @@ Content-Type: application/json
 ```
 
 - The identifier is a username or an email address. It must match in full. Case and outer spaces do not matter.
+- The database decides which texts are equal. One that ignores accents, such as MySQL for a username,
+  also finds the realm of the user `andré` for `andre`.
 - Keycloak stores at most 255 characters for a username or an email address, so a longer identifier is rejected.
+- An identifier with a NUL character inside, or with half of a surrogate pair, is rejected.
+  PostgreSQL cannot store such a text.
 - A realm is returned when it is enabled and has an enabled user with that username or email address.
-- The names are in alphabetical order, each one once. No match gives an empty list.
+- The names are sorted by character code, each one once. So `Zeta` comes before `alpha`. No match gives an empty list.
 - The identifier is in the body, so it does not show up in access logs.
 
 | Status | Reason |
 |---|---|
 | `200` | The search ran. |
-| `400` | The body has no text field `identifier`, or it is blank, or it is longer than 255 characters. |
+| `400` | The body has no text field `identifier`, or it is blank, or it is longer than 255 characters, or it has a NUL character or half of a surrogate pair. |
 | `401` | No valid bearer token of the host realm. |
 | `403` | The token is not of a service account, or the service account does not have the role. |
 | `404` | The realm is not the host realm, or the options are not set. |
@@ -105,6 +109,9 @@ With 500 realms and 500,000 users a call takes less than 10 ms. See [docs/perfor
 - The path of the endpoint is public, like every realm resource of Keycloak. The token and the role protect it.
   You can also block the path at your proxy.
 - A user that exists only in a user federation, such as LDAP, and was never imported into Keycloak is not found.
+- An imported user is found by its copy in the database of Keycloak. The lookup does not ask the user federation
+  or an organization. So it can return a realm where Keycloak refuses the login, such as after the user was
+  removed from LDAP, or for a managed member of a disabled organization.
 - Service accounts are never returned.
 
 ## Build
