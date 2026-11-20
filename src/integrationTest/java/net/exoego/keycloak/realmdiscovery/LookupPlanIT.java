@@ -29,14 +29,15 @@ class LookupPlanIT {
     // With fewer users the database reads the whole table, which is then the faster plan.
     private static final int USERS = 1000;
 
-    // The statements as Hibernate sends them. scripts/bench/run.sh prints them from the log of the database.
+    // The statements as Hibernate sends them, without the display name. Its place depends on the Keycloak version.
+    // scripts/bench/run.sh prints them from the log of the database.
     private static final String EXPLAIN_BY_EMAIL = """
-            explain select distinct re1_0.ID,re1_0.NAME from REALM re1_0,USER_ENTITY ue1_0
+            explain select re1_0.ID,re1_0.NAME from REALM re1_0,USER_ENTITY ue1_0
             where ue1_0.REALM_ID=re1_0.ID and ue1_0.EMAIL=? and ue1_0.EMAIL_VERIFIED=true
             and re1_0.LOGIN_WITH_EMAIL_ALLOWED=true and ue1_0.ENABLED=true and re1_0.ENABLED=true
             and ue1_0.SERVICE_ACCOUNT_CLIENT_LINK is null""";
     private static final String EXPLAIN_BY_USERNAME = """
-            explain select distinct re1_0.ID,re1_0.NAME from REALM re1_0,USER_ENTITY ue1_0
+            explain select re1_0.ID,re1_0.NAME from REALM re1_0,USER_ENTITY ue1_0
             where ue1_0.REALM_ID=re1_0.ID and ue1_0.USERNAME=?
             and (ue1_0.EMAIL is null or ue1_0.EMAIL<>ue1_0.USERNAME or ue1_0.EMAIL_VERIFIED=true)
             and ue1_0.ENABLED=true and re1_0.ENABLED=true and ue1_0.SERVICE_ACCOUNT_CLIENT_LINK is null""";

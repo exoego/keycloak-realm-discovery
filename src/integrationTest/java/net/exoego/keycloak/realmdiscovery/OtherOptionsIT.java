@@ -71,7 +71,7 @@ class OtherOptionsIT {
         HttpResponse<String> response = discovery.post(HOST, token(), BODY);
 
         assertEquals(200, response.statusCode(), response.body());
-        assertEquals("{\"realms\":[\"twins\"]}", response.body());
+        assertEquals("twins", Discovery.JSON.readTree(response.body()).get("realms").get(0).get("name").asText());
     }
 
     @Test

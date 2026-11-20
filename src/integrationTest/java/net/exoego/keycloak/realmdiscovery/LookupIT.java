@@ -41,7 +41,9 @@ class LookupIT {
 
         UserRepresentation dana = user("dana", "dana@lookup.example");
         dana.setEnabled(false);
-        create(TestRealms.realm(ALPHA),
+        RealmRepresentation alpha = TestRealms.realm(ALPHA);
+        alpha.setDisplayName("Alpha Inc.");
+        create(alpha,
                 user("alice", "alice@lookup.example"),
                 user("carol", "carol@alpha.example"),
                 user("shared-in-alpha", "shared@lookup.example"),
@@ -113,6 +115,16 @@ class LookupIT {
         assertEquals(List.of(NAMES_ONLY), realms("judy"));
         assertEquals(List.of(), realms("twin@lookup.example"));
         assertEquals(List.of(TWINS), realms("twin-one"));
+    }
+
+    @Test
+    void returnsTheDisplayNameOfARealm() throws Exception {
+        String body = discovery.post(HOST_REALM, token, "{\"identifier\":\"carol\"}").body();
+
+        JsonNode found = Discovery.JSON.readTree(body).get("realms");
+        assertEquals(2, found.size(), body);
+        assertEquals(Discovery.JSON.readTree("{\"name\":\"lookup-alpha\",\"displayName\":\"Alpha Inc.\"}"), found.get(0));
+        assertEquals(Discovery.JSON.readTree("{\"name\":\"lookup-beta\"}"), found.get(1));
     }
 
     @Test
@@ -230,7 +242,7 @@ class LookupIT {
         JsonNode json = Discovery.JSON.readTree(response.body());
         assertEquals(1, json.size(), response.body());
         List<String> realms = new ArrayList<>();
-        json.get("realms").forEach(name -> realms.add(name.asText()));
+        json.get("realms").forEach(realm -> realms.add(realm.get("name").asText()));
         return realms;
     }
 
