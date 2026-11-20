@@ -45,8 +45,11 @@ final class RealmDiscoveryResourceProvider implements RealmResourceProvider {
         // Keycloak 26.5 deprecated getUser() for user(), which Keycloak 24 and 25 do not have.
         @SuppressWarnings("removal")
         UserModel user = authenticated.getUser();
+        if (user.getServiceAccountClientLink() == null) {
+            throw new ForbiddenException();
+        }
         RoleModel role = realm.getRole(settings.requiredRole());
-        if (user.getServiceAccountClientLink() == null || role == null || !user.hasRole(role)) {
+        if (role == null || !user.hasRole(role)) {
             throw new ForbiddenException();
         }
     }
