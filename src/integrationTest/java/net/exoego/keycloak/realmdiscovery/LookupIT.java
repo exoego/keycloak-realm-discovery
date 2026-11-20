@@ -143,6 +143,19 @@ class LookupIT {
     }
 
     @Test
+    void rejectsAnIdentifierLongerThanTheColumns() throws Exception {
+        assertEquals(List.of(), realms("a".repeat(255)));
+        assertEquals(List.of(), realms("  " + "a".repeat(255) + "  "));
+        // One character outside the basic plane is two chars in Java and one character in the database.
+        assertEquals(List.of(), realms("\uD83D\uDE00".repeat(255)));
+
+        for (String identifier : List.of("a".repeat(256), "\uD83D\uDE00".repeat(256))) {
+            String body = Discovery.JSON.writeValueAsString(java.util.Map.of("identifier", identifier));
+            assertEquals(400, discovery.post(HOST_REALM, token, body).statusCode());
+        }
+    }
+
+    @Test
     void checksTheCallerBeforeTheBody() throws Exception {
         assertEquals(401, discovery.post(HOST_REALM, null, "{}").statusCode());
     }

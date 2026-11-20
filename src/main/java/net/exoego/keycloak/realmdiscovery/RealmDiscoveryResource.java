@@ -28,6 +28,9 @@ import org.keycloak.services.managers.AppAuthManager;
  */
 public class RealmDiscoveryResource {
 
+    // The username and email columns of Keycloak hold 255 characters, so a longer identifier matches no user.
+    private static final int MAX_LENGTH = 255;
+
     private final KeycloakSession session;
     private final Settings settings;
 
@@ -52,12 +55,16 @@ public class RealmDiscoveryResource {
             throw new NotFoundException();
         }
         requireCaller(realm);
-        JsonNode identifier = body == null ? null : body.get("identifier");
-        if (identifier == null || !identifier.isTextual() || identifier.asText().isBlank()) {
+        JsonNode field = body == null ? null : body.get("identifier");
+        String identifier = field != null && field.isTextual() ? field.asText().trim() : "";
+        if (identifier.isEmpty()) {
             throw new BadRequestException("identifier is required");
         }
+        if (identifier.codePointCount(0, identifier.length()) > MAX_LENGTH) {
+            throw new BadRequestException("identifier is too long");
+        }
         var entityManager = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        var realms = new RealmFinder(entityManager, settings.excludedRealms()).find(identifier.asText());
+        var realms = new RealmFinder(entityManager, settings.excludedRealms()).find(identifier);
         return Response.ok(Map.of("realms", realms)).header(HttpHeaders.CACHE_CONTROL, "no-store").build();
     }
 
