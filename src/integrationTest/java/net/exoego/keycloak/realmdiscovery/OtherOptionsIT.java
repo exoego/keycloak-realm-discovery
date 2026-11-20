@@ -14,7 +14,7 @@ import static net.exoego.keycloak.realmdiscovery.KeycloakEnvironment.option;
 import static net.exoego.keycloak.realmdiscovery.TestRealms.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class EmailLoginOptionIT {
+class OtherOptionsIT {
 
     private static final String ROLE = "realm-finder";
     private static final String CLIENT = "caller";
