@@ -155,6 +155,16 @@ class LookupIT {
         }
     }
 
+    // The bodies are written by hand. A Java string with half of a pair would leave the HTTP client as "?".
+    @ParameterizedTest
+    @ValueSource(strings = {"a\\u0000b", "who\\ud83d@lookup.example", "who\\ude00@lookup.example",
+            "who\\ude00\\ud83d@lookup.example"})
+    void rejectsANulCharacterAndHalfOfASurrogatePair(String escaped) throws Exception {
+        HttpResponse<String> response = discovery.post(HOST_REALM, token, "{\"identifier\":\"" + escaped + "\"}");
+
+        assertEquals(400, response.statusCode(), response.body());
+    }
+
     @Test
     void checksTheCallerBeforeTheBody() throws Exception {
         assertEquals(401, discovery.post(HOST_REALM, null, "{}").statusCode());
