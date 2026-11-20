@@ -76,6 +76,11 @@ Content-Type: application/json
 | `403` | The token is not of a service account, or the service account does not have the role. |
 | `404` | The realm is not the host realm, or the options are not set. |
 
+## Performance
+
+Both the email address and the username are found through indexes that Keycloak creates itself.
+With 500 realms and 500,000 users a call takes less than 10 ms. See [docs/performance.md](docs/performance.md).
+
 ## Security
 
 - The answer tells whether an identifier exists. Give the role only to backends that you trust,

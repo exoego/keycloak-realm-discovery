@@ -81,6 +81,10 @@ testing {
                     inputs.files(tasks.jar)
                     systemProperty("keycloak.version", testKeycloakVersion.get())
                     systemProperty("provider.jar", tasks.jar.get().archiveFile.get().asFile.absolutePath)
+                    // A test fills the database with the seed of the measurement and reads the plans.
+                    val seed = layout.projectDirectory.file("scripts/bench/seed.sql").asFile
+                    inputs.file(seed)
+                    systemProperty("bench.seed", seed.absolutePath)
                     // A hung container call must fail the build, not block it.
                     timeout.set(Duration.ofMinutes(15))
                     // The provider runs in the JVM of Keycloak, so the JaCoCo agent goes into that container.
