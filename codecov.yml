@@ -1,0 +1,10 @@
+# The report holds the unit tests and the integration tests. The second part is measured in the
+# Keycloak containers of the tests. The build itself requires that every line is covered.
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true

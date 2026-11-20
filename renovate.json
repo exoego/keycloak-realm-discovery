@@ -1,0 +1,61 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "minimumReleaseAge": "7 days",
+  "osvVulnerabilityAlerts": true,
+  "automerge": true,
+  "labels": [
+    "chore"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Tool versions in a Dockerfile, marked with a renovate comment on the line above",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)\\nARG [A-Z_]+_VERSION=(?<currentValue>\\S+)"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Tool versions in a workflow, marked with a renovate comment on the line above",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)\\s+.*@(?<currentValue>[^\\s@]+)"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "These tools gate the build and can add checks in any release, so check each update by hand",
+      "matchPackageNames": [
+        "aislop",
+        "com.google.errorprone:**"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Pick a new Java major by hand",
+      "matchDatasources": [
+        "java-version"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Keycloak changes its internal APIs between minor versions, so check each update by hand",
+      "matchPackageNames": [
+        "org.keycloak:**"
+      ],
+      "automerge": false
+    }
+  ]
+}
