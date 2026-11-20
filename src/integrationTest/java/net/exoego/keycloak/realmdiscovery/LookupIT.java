@@ -27,6 +27,7 @@ class LookupIT {
     private static final String BETA = "lookup-beta";
     private static final String TWINS = "lookup-twins";
     private static final String SLEEPING = "lookup-sleeping";
+    private static final String NAMES_ONLY = "lookup-names-only";
 
     private static Discovery discovery;
     private static String token;
@@ -42,6 +43,9 @@ class LookupIT {
                 user("carol", "carol@alpha.example"),
                 user("shared-in-alpha", "shared@lookup.example"),
                 user("erin", "name-or-mail@lookup.example"),
+                unverified("grace", "grace@lookup.example"),
+                unverified("heidi@lookup.example", "heidi@lookup.example"),
+                unverified("ivan@lookup.example", "other@lookup.example"),
                 dana);
         create(TestRealms.realm(BETA),
                 user("bob", "bob@lookup.example"),
@@ -54,6 +58,12 @@ class LookupIT {
         create(twins,
                 user("twin-one", "twin@lookup.example"),
                 user("twin-two", "twin@lookup.example"));
+
+        RealmRepresentation namesOnly = TestRealms.realm(NAMES_ONLY);
+        namesOnly.setLoginWithEmailAllowed(false);
+        create(namesOnly,
+                user("judy", "judy@lookup.example"),
+                user("alice@lookup.example", "kim@lookup.example"));
 
         RealmRepresentation sleeping = TestRealms.realm(SLEEPING);
         sleeping.setEnabled(false);
@@ -73,8 +83,29 @@ class LookupIT {
 
     @Test
     void findsTheRealmOfAnEmail() throws Exception {
-        assertEquals(List.of(ALPHA), realms("alice@lookup.example"));
+        assertEquals(List.of(ALPHA, NAMES_ONLY), realms("alice@lookup.example"));
         assertEquals(List.of(BETA), realms("bob@lookup.example"));
+    }
+
+    @Test
+    void skipsAnEmailThatIsNotVerified() throws Exception {
+        assertEquals(List.of(), realms("grace@lookup.example"));
+        assertEquals(List.of(ALPHA), realms("grace"));
+        assertEquals(List.of(), realms("other@lookup.example"));
+    }
+
+    @Test
+    void skipsAUsernameThatIsTheUnverifiedEmailOfTheUser() throws Exception {
+        assertEquals(List.of(), realms("heidi@lookup.example"));
+        assertEquals(List.of(ALPHA), realms("ivan@lookup.example"));
+    }
+
+    @Test
+    void skipsAnEmailInARealmWithoutEmailLogin() throws Exception {
+        assertEquals(List.of(), realms("judy@lookup.example"));
+        assertEquals(List.of(NAMES_ONLY), realms("judy"));
+        assertEquals(List.of(), realms("twin@lookup.example"));
+        assertEquals(List.of(TWINS), realms("twin-one"));
     }
 
     @Test
@@ -102,18 +133,13 @@ class LookupIT {
     }
 
     @Test
-    void returnsARealmOnceForTwoUsersWithTheSameEmail() throws Exception {
-        assertEquals(List.of(TWINS), realms("twin@lookup.example"));
-    }
-
-    @Test
     void mergesAUsernameMatchAndAnEmailMatch() throws Exception {
         assertEquals(List.of(ALPHA, BETA), realms("name-or-mail@lookup.example"));
     }
 
     @Test
     void ignoresCaseAndOuterSpaces() throws Exception {
-        assertEquals(List.of(ALPHA), realms("  Alice@Lookup.Example "));
+        assertEquals(List.of(ALPHA, NAMES_ONLY), realms("  Alice@Lookup.Example "));
         assertEquals(List.of(ALPHA), realms("ALICE"));
     }
 
@@ -181,6 +207,12 @@ class LookupIT {
         List<String> realms = new ArrayList<>();
         json.get("realms").forEach(name -> realms.add(name.asText()));
         return realms;
+    }
+
+    private static UserRepresentation unverified(String username, String email) {
+        UserRepresentation user = user(username, email);
+        user.setEmailVerified(false);
+        return user;
     }
 
     private static void create(RealmRepresentation realm, UserRepresentation... users) {

@@ -13,16 +13,24 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  */
 final class RealmFinder {
 
+    // Anyone who can create a user can store the email address of another person, so only a verified one counts.
+    private static final String BY_EMAIL = "u.email = :identifier and u.emailVerified = true";
+    // A username that is the email address of the user is such an address too.
+    private static final String BY_USERNAME = "u.username = :identifier"
+            + " and (u.email is null or u.email <> u.username or u.emailVerified = true)";
+
     // Two statements, because each one can use its own index. USER_ENTITY has an index on EMAIL,
     // and a unique constraint on (REALM_ID, USERNAME) that the join probes once for each realm.
-    private static final List<String> QUERIES = List.of(query("email"), query("username"));
+    private static final List<String> WHERE_THE_IDENTIFIER_LOGS_IN =
+            List.of(query(BY_EMAIL + " and r.loginWithEmailAllowed = true"), query(BY_USERNAME));
+    private static final List<String> WHERE_THE_USER_EXISTS = List.of(query(BY_EMAIL), query(BY_USERNAME));
 
     private final EntityManager entityManager;
-    private final Set<String> excludedRealms;
+    private final Settings settings;
 
-    RealmFinder(EntityManager entityManager, Set<String> excludedRealms) {
+    RealmFinder(EntityManager entityManager, Settings settings) {
         this.entityManager = entityManager;
-        this.excludedRealms = excludedRealms;
+        this.settings = settings;
     }
 
     /** Returns the realm names in the order of {@link String#compareTo(String)}. */
@@ -31,18 +39,19 @@ final class RealmFinder {
         // Its own method is used, because the result depends on the default locale of the JVM.
         String value = KeycloakModelUtils.toLowerCaseSafe(identifier);
         Set<String> realms = new TreeSet<>();
-        for (String query : QUERIES) {
+        for (String query : settings.includeRealmsWithoutEmailLogin()
+                ? WHERE_THE_USER_EXISTS : WHERE_THE_IDENTIFIER_LOGS_IN) {
             realms.addAll(entityManager.createQuery(query, String.class)
                     .setParameter("identifier", value)
                     .getResultList());
         }
-        realms.removeAll(excludedRealms);
+        realms.removeAll(settings.excludedRealms());
         return List.copyOf(realms);
     }
 
-    private static String query(String attribute) {
+    private static String query(String match) {
         return "select distinct r.name from RealmEntity r, UserEntity u"
-                + " where u.realmId = r.id and u." + attribute + " = :identifier"
+                + " where u.realmId = r.id and " + match
                 + " and u.enabled = true and r.enabled = true and u.serviceAccountClientLink is null";
     }
 }
